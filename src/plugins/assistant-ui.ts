@@ -472,6 +472,8 @@ if (root) {
       const link = document.createElement("a");
       link.className = "fibel-assistant__source";
       link.href = source.href;
+      link.target = "_blank";
+      link.rel = "noreferrer noopener";
       link.textContent = source.title || source.href;
       list.append(link);
     }

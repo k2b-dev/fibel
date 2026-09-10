@@ -67,8 +67,7 @@ export function renderAssistantMarkdown(markdown: string) {
         const href = safeAssistantHref(token.href);
         if (!href) return label;
         const title = token.title ? ` title="${escapeHtml(token.title)}"` : "";
-        const external = /^https?:\/\//i.test(href) ? ' target="_blank" rel="noreferrer noopener"' : "";
-        return `<a href="${escapeHtml(href)}"${title}${external}>${label}</a>`;
+        return `<a href="${escapeHtml(href)}"${title} target="_blank" rel="noreferrer noopener">${label}</a>`;
       },
       image(token: Tokens.Image) {
         return escapeHtml(token.text);

@@ -184,6 +184,8 @@ describe("assistant plugin", () => {
     expect(internalScript).toContain("getBoundingClientRect()");
     expect(internalScript).toContain("requestAnimationFrame");
     expect(internalScript).toContain("focus({ preventScroll: true })");
+    expect(internalScript).toContain('link.target = "_blank"');
+    expect(internalScript).toContain('link.rel = "noreferrer noopener"');
 
     const styles = await app.fetch(new Request("http://localhost/_fibel/assistant.css"));
     expect(styles.status).toBe(200);
@@ -380,6 +382,7 @@ describe("assistant plugin", () => {
     }
 
     const none = await capturePrompt([]);
+    expect(none).toContain("website_url=https://docs.example.com/");
     expect(none).not.toContain("Trusted agent access:");
     expect(none).not.toContain("agent_skills_install_command");
     expect(none).not.toContain("mcp_endpoint");
@@ -421,6 +424,8 @@ describe("assistant plugin", () => {
     expect(both).toContain(
       "mcp_endpoint=https://docs.example.com/docs/_fibel/mcp",
     );
+    expect(both).toContain("website_url=https://docs.example.com/docs");
+    expect(both).not.toContain("website_url=http://fibel.internal");
     expect(both).toContain(
       "agent_setup_recommendation=Install the skill for compact workflow guidance and connect MCP for exact current documentation.",
     );
@@ -541,11 +546,39 @@ describe("assistant plugin", () => {
 
     expect(html).toContain("<h1>Small</h1>");
     expect(html).toContain("<strong>bold</strong>");
-    expect(html).toContain('<a href="/en">docs</a>');
+    expect(html).toContain('<a href="/en" target="_blank" rel="noreferrer noopener">docs</a>');
     expect(html).toContain('<div class="fibel-table-scroll"><table>');
     expect(html).not.toContain('href="javascript:');
     expect(html).toContain("&lt;script&gt;alert(1)&lt;/script&gt;");
     expect(html).not.toContain("<script>");
+  });
+
+  test.each(["/docs/en/hosting?mode=backup#scaling", "./backups", "#scaling", "https://example.com/docs", "mailto:docs@example.com"])("opens assistant link %s in a new tab", (href) => {
+    expect(renderAssistantMarkdown(`[Docs](${href})`)).toContain(
+      `<a href="${href}" target="_blank" rel="noreferrer noopener">Docs</a>`,
+    );
+  });
+
+  test.each([true, false])("uses the current website instead of a configured example URL (Origin header: %s)", async (withOrigin) => {
+    const requests: GenerateRequest[] = [];
+    const app = await createFibelApp({
+      ...config,
+      siteUrl: "https://rsql.example",
+      plugins: [...defaultPlugins(), assistantPlugin({ provider: directProvider(requests) })],
+    });
+    const response = await app.fetch(new Request("https://rsql.k2b.dev/_fibel/assistant", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(withOrigin ? { Origin: "https://rsql.k2b.dev" } : {}),
+      },
+      body: JSON.stringify({ message: "What is this?", locale: "en", page: "/en" }),
+    }));
+    expect(response.status).toBe(200);
+    await response.text();
+    expect(requests[0]?.systemPrompt).toContain("website_url=https://rsql.k2b.dev/");
+    expect(requests[0]?.systemPrompt).not.toContain("https://rsql.example");
+    expect(requests[0]?.systemPrompt).toContain("copy the exact root-relative href");
   });
 
   test("renders an icon-only code toolbar and highlights shell and SQL fences", () => {
