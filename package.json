@@ -1,6 +1,6 @@
 {
   "name": "@k2b/fibel",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "description": "Config-first documentation runtime for Markdown collections, custom SSR pages, search, and AI-ready source routes.",
   "type": "module",
   "main": "src/index.ts",
@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@k2b/nessi": "^0.12.0",
-    "@k2b/stdlib": "^0.22.0",
+    "@k2b/stdlib": "^0.25.0",
     "@modelcontextprotocol/sdk": "1.30.0",
     "bun-plugin-tailwind": "^0.1.2",
     "marked": "^18.0.12",
